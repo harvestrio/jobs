@@ -251,7 +251,7 @@ type Person {
 
 ```
 
-2. Deploy a graphql typescript server for the previously created model, that allows user to get a Message based on its clientId (no authentication required)
+2. Deploy a graphql typescript server for the previously created model, that allows user to get a Message based on its clientId (no authentication required). Tips: Using one of the [Prisma example](https://github.com/prisma/prisma-examples) is heavily adviced.
 
 ## Logic
 
