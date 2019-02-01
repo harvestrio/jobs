@@ -257,4 +257,4 @@ type Person {
 
 Consider a turn by turn two players game which goal is to be the first person to reach 50.
 Each turn, player must say a number between 1 and 10 (included). This number is added to the total sum.
-Would you chose to be the starting player?
+Would you chose to be the starting player? Why?
