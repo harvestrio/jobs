@@ -5,7 +5,7 @@ For each question, detail your reasonning as much as possible when applicable.
 ## API manipulation
 
 1. Using [Postman](https://www.getpostman.com/), create an issue on one of your Github Repository
-2. Create a Card on a Github project of your choice
+2. Create a Card on a Github Project of your choice
 
 ## ES7 understanding
 
