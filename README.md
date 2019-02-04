@@ -1,7 +1,5 @@
 # Harvestr MVP test
 
-For each question, detail your reasonning as much as possible when applicable.
-
 ## API manipulation
 
 1. Using [Postman](https://www.getpostman.com/), create an Issue on one of your Github Repository
