@@ -39,3 +39,9 @@ Coding style guide: https://github.com/airbnb/javascript
 * Localtunnel (similar Ngrok)
 * Payment: Chargebee + Stripe
 * Segment.io
+
+
+## Environmnent
+* Unix
+* Vscode
+    * Extensions: Install Settings Sync extension and load the following extensions: https://gist.github.com/valentinbe/d806ba7794f3c15700836e19fdfd56ad
