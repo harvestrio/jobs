@@ -1,0 +1,642 @@
+# Please note: if having trouble with deletion errors, remember the declaration order is important here
+type Project {
+    id: ID! @unique
+    clientId: ID @unique
+    mongoId: ID @unique
+    mongoCompanyId: ID @unique
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    # blocked: Boolean! @default(value: "false")
+
+    accounts: [Account!]! @relation(name: "ProjectAccounts", onDelete: CASCADE)
+    messages: [Message!]! @relation(name: "ProjectMessages", onDelete: CASCADE)
+    discoveries: [Discovery!]!
+        @relation(name: "ProjectDiscoveries", onDelete: CASCADE)
+    discoverystates: [Discoverystate!]!
+        @relation(name: "ProjectDiscoverystates", onDelete: CASCADE)
+    scoreColumns: [ScoreColumn!]!
+        @relation(name: "ProjectScoreColumns", onDelete: CASCADE)
+    tags: [Tag!]! @relation(name: "ProjectTags", onDelete: CASCADE)
+    usergroups: [Usergroup!]!
+        @relation(name: "ProjectUsergroups", onDelete: CASCADE)
+    chunks: [Chunk!]! @relation(name: "ProjectChunks", onDelete: CASCADE)
+    persons: [Person!]! @relation(name: "ProjectPersons", onDelete: CASCADE)
+    invites: [Invite!]! @relation(name: "ProjectInvites", onDelete: CASCADE)
+    organizations: [Organization!]!
+        @relation(name: "ProjectOrganizations", onDelete: CASCADE)
+    filterviews: [Filterview!]!
+        @relation(name: "ProjectFilterviews", onDelete: CASCADE)
+    apiTokens: [ApiToken!]! @relation(name: "ProjectTokens", onDelete: CASCADE)
+    activities: [Activity!]!
+        @relation(name: "ProjectActivities", onDelete: CASCADE)
+
+    picture: Picture @relation(name: "ProjectPicture", onDelete: CASCADE)
+    # subscription_plan: SubscriptionPlan
+
+    harvestr_mail: String! @unique
+    name: String! @unique
+
+    payment: Payment @relation(name: "ProjectPayment", onDelete: CASCADE)
+    authorizations: Authorizations!
+        @relation(name: "ProjectAuthorizations", onDelete: CASCADE)
+}
+
+enum ACCOUNT_BLOCKED_REASON {
+    NOT_PAYED
+    CHURN
+    TRIAL_ENDED
+    UNSUFFICIENT_PLAN
+}
+
+enum AUTHORIZATION_STATUS {
+    ACTIVE
+    TRIAL
+    BLOCKED
+    OLD_ACCOUNT
+}
+
+type Authorizations {
+    project: Project!
+        @relation(name: "ProjectAuthorizations", onDelete: SET_NULL)
+    status: AUTHORIZATION_STATUS! @default(value: "TRIAL")
+    blockedReason: ACCOUNT_BLOCKED_REASON
+    trialEndAt: DateTime
+    # full: boolean @default(value: "true")
+}
+
+type Account {
+    id: ID! @unique
+    clientId: ID @unique
+    mongoId: ID @unique
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    lastSeenAt: DateTime!
+    deletedAt: DateTime
+
+    project: Project! @relation(name: "ProjectAccounts")
+    person: Person! @relation(name: "AccountPerson", onDelete: SET_NULL)
+    context: Context! @relation(name: "AccountContext", onDelete: CASCADE)
+    notifications: [Notification!]!
+        @relation(name: "AccountNotifications", onDelete: CASCADE)
+    subscribed_discoveries: [Discovery!]!
+        @relation(name: "SubscribedDiscoveries")
+
+    reset_password_token: String
+    reset_password_exp_date: DateTime
+
+    username: String! @unique
+    hash: String!
+
+    need_onboarding: Boolean! @default(value: "true")
+    email_validated: Boolean! @default(value: "false")
+    emailConfirmToken: String
+}
+
+type Payment {
+    project: Project! @relation(name: "ProjectPayment", onDelete: SET_NULL)
+    _projectId: ID! @unique
+
+    customerId: String! @unique
+    subscriptionId: String! @unique
+
+    # invoiceMailNotifications: Boolean! @default(value: "false")
+}
+
+type TokenOptions {
+    apiToken: ApiToken! @relation(name: "TokenOptions")
+
+    sync_organizations: Boolean @default(value: "false")
+    notify_read: Boolean @default(value: "false")
+    notify_linked: Boolean @default(value: "false")
+    notify_state: Boolean @default(value: "false")
+    notify_inbox: Boolean @default(value: "false")
+    always_copy: Boolean @default(value: "false")
+}
+
+type TokenTrigger {
+    apiToken: ApiToken! @relation(name: "TokenTrigger")
+
+    triggerId: ID!
+    type: String
+    name: String
+}
+
+enum TOKEN_SOURCE {
+    MAIL
+    ZENDESK_WIDGET
+    ZENDESK_API
+    INTERCOM_MENTION
+    JIRA
+    TRELLO
+    GITHUB
+    GITLAB
+}
+
+type ApiToken {
+    id: ID! @unique
+    clientId: ID @unique
+    mongoId: ID @unique
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    _projectId: ID
+
+    project: Project! @relation(name: "ProjectTokens")
+
+    integration_trigger: TokenTrigger
+        @relation(name: "TokenTrigger", onDelete: CASCADE)
+    options: TokenOptions @relation(name: "TokenOptions", onDelete: CASCADE)
+
+    mail: String
+    source: TOKEN_SOURCE!
+    integration_webhook_id: String @unique
+    integration_target_id: String @unique
+    integration_trigger_id: String @unique
+    integration_access_token: String
+    token: String
+    consumer_key: String
+    private_key: String
+    token_secret: String
+    host_url: String
+    subdomain: String
+    connected_user_id: String
+}
+
+enum CHANNEL {
+    NOTE
+    INTERCOM
+    MAIL
+    SLACK
+    ZENDESK
+    SHEET
+    FORM
+}
+
+enum MESSAGE_TYPE {
+    NOTE
+    MESSAGE
+}
+
+enum DISCOVERY_TYPE {
+    COMPONENT
+    DISCOVERY
+}
+
+type TextSelection {
+    offset_start: Int!
+    length: Int!
+
+    chunk: Chunk! @relation(name: "ChunkSelections")
+}
+
+type Chunk {
+    id: ID! @unique
+    clientId: ID @unique
+    mongoId: ID @unique
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    _projectId: ID
+
+    project: Project! @relation(name: "ProjectChunks")
+    message: Message! @relation(name: "MessageChunks")
+    discoveries: [Discovery!]! @relation(name: "DiscoveryChunks")
+    selection_offset: [TextSelection!]!
+        @relation(name: "ChunkSelections", onDelete: CASCADE)
+
+    sub_message_number: Int
+    content: String!
+    starred: Boolean! @default(value: "false")
+}
+
+type Submessage {
+    id: ID! @unique
+    clientId: ID @unique
+    mongoId: ID
+    createdAt: DateTime! # date it was created on harvestr
+    updatedAt: DateTime!
+    receivedAt: DateTime # real reception date
+    message: Message! @relation(name: "MessageSubmessages")
+    attachments: [Attachment!]!
+        @relation(name: "SubmessageAttachments", onDelete: CASCADE)
+    submitter: Person!
+
+    integration_id: String
+    type: MESSAGE_TYPE! @default(value: "MESSAGE")
+    content: String! @default(value: "")
+}
+
+type Message {
+    id: ID! @unique
+    clientId: ID @unique
+    mongoId: ID @unique
+    createdAt: DateTime! # date it was created on harvestr
+    updatedAt: DateTime!
+    receivedAt: DateTime # real reception date
+    _projectId: ID
+
+    project: Project! @relation(name: "ProjectMessages")
+
+    chunks: [Chunk!]! @relation(name: "MessageChunks", onDelete: CASCADE)
+    sub_messages: [Submessage!]!
+        @relation(name: "MessageSubmessages", onDelete: CASCADE)
+    submitter: Person! @relation(name: "MessageSubmitter")
+    requester: Person @relation(name: "MessageRequester")
+    ccs: [Person!]! @relation(name: "MessageCcs")
+    attachments: [Attachment!]!
+        @relation(name: "MessageAttachments", onDelete: CASCADE)
+
+    tags: [Json!]!
+    integration_url: String
+    integration_id: String
+    recipient_address: String # unused
+    title: String! @default(value: "")
+    content: String! @default(value: "")
+    channel: CHANNEL! @default(value: "NOTE")
+
+    read: Boolean! @default(value: "false")
+    updated: Boolean! @default(value: "false")
+    submessageBeforeUpdateId: ID
+    archived: Boolean! @default(value: "false")
+    processed: Boolean! @default(value: "false")
+}
+
+type Comment {
+    id: ID! @unique
+    clientId: ID @unique
+    mongoId: ID
+    createdAt: DateTime!
+    updatedAt: DateTime!
+
+    discovery: Discovery! @relation(name: "DiscoveryComments")
+    mentions: [Person!]! @relation(name: "MentionnedPersons")
+    commenter: Person! @relation(name: "Commenter")
+    attachments: [Attachment!]!
+        @relation(name: "CommentAttachments", onDelete: CASCADE)
+
+    content: String!
+}
+
+type PublicLink {
+    createdAt: DateTime!
+    creator: Person! @relation(name: "PersonPublicLinksCreated")
+
+    discovery: [Discovery!]! @relation(name: "DiscoveryPubliclink")
+}
+
+type Discovery {
+    id: ID! @unique
+    clientId: ID @unique
+    mongoId: ID @unique
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    lastChunkAt: DateTime
+    _projectId: ID
+
+    project: Project! @relation(name: "ProjectDiscoveries")
+    chunks: [Chunk!]! @relation(name: "DiscoveryChunks", onDelete: CASCADE)
+    tags: [Tag!]! @relation(name: "TaggedDiscoveries")
+    discoverystate: Discoverystate @relation(name: "StateDiscoveries") # only required if type DISCOVERY
+    children: [Discovery!]!
+        @relation(name: "DiscoveryChildren", onDelete: CASCADE)
+    linked_discoveries: [Discovery!]!
+        @relation(name: "LinkedDiscoveries", onDelete: SET_NULL)
+    parent: Discovery @relation(name: "DiscoveryChildren", onDelete: SET_NULL)
+    public_link: PublicLink
+        @relation(name: "DiscoveryPubliclink", onDelete: CASCADE)
+    subscribers: [Account!]! @relation(name: "SubscribedDiscoveries")
+    comments: [Comment!]!
+        @relation(name: "DiscoveryComments", onDelete: CASCADE)
+    attachments: [Attachment!]!
+        @relation(name: "DiscoveryAttachments", onDelete: CASCADE)
+    activities: [Activity!]!
+        @relation(name: "DiscoveryActivities", onDelete: CASCADE)
+    discoveryScores: [DiscoveryScore!]!
+        @relation(name: "DiscoveryScores", onDelete: CASCADE)
+
+    type: DISCOVERY_TYPE!
+    # persons: [Person!]!
+
+    title: String!
+    description: String
+    position: Float! @default(value: "16384")
+
+    jira_issues: [Json!]!
+    trello_cards: [Json!]!
+    gitlab_issues: [Json!]!
+    github_issues: [Json!]!
+
+    starred: Boolean! @default(value: "false")
+    archived: Boolean! @default(value: "false")
+}
+
+type DiscoveryScore {
+    id: ID! @unique
+    clientId: ID
+    createdAt: DateTime!
+    updatedAt: DateTime!
+
+    discovery: Discovery! @relation(name: "DiscoveryScores", onDelete: SET_NULL)
+    scoreColumn: ScoreColumn!
+        @relation(name: "ColumnDiscoveryScores", onDelete: SET_NULL)
+
+    value: Int!
+}
+
+enum SCORE_TYPE {
+    POINTS
+    FEEDBACK
+}
+
+type ScoreColumn {
+    id: ID! @unique
+    clientId: ID @unique
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    _projectId: ID
+
+    project: Project! @relation(name: "ProjectScoreColumns", onDelete: SET_NULL)
+    discoveryScores: [DiscoveryScore!]!
+        @relation(name: "ColumnDiscoveryScores", onDelete: CASCADE)
+
+    name: String!
+    weight: Int! @default(value: 50)
+    position: Float! @default(value: "16384")
+    type: SCORE_TYPE! @default(value: "POINTS")
+    default: Int
+    max: Int
+    min: Int
+}
+
+type Discoverystate {
+    id: ID! @unique
+    clientId: ID @unique
+    mongoId: ID
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    _projectId: ID
+
+    project: Project! @relation(name: "ProjectDiscoverystates")
+    discoveries: [Discovery!]! @relation(name: "StateDiscoveries")
+
+    name: String!
+    index: Int!
+    color: COLOR! @default(value: "GREY")
+
+    active: Boolean! @default(value: "true")
+    default: Boolean! @default(value: "false")
+}
+
+enum COLOR {
+    GREY
+    BLUE
+    GREEN
+    RED
+    LGREEN
+    LBLUE
+    YELLOW
+    ORANGE
+}
+
+enum PERSON_TYPE {
+    COLLABORATOR
+    CUSTOMER
+}
+
+enum RIGHT {
+    ADMIN
+    AGENT
+    VIEWER
+}
+
+type ProjectRight {
+    project: Project!
+    right: RIGHT!
+
+    person: Person @relation(name: "PersonRights")
+}
+
+type Person {
+    id: ID! @unique
+    clientId: ID @unique
+    mongoId: ID @unique
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    _projectId: ID
+
+    project: Project! @relation(name: "ProjectPersons")
+    organization: Organization @relation(name: "OrganizationPersons")
+    usergroups: [Usergroup!]! @relation(name: "UsergroupPersons")
+
+    right: ProjectRight @relation(name: "PersonRights", onDelete: CASCADE) # TODO changed
+    avatar: Picture @relation(name: "PersonAvatar", onDelete: CASCADE)
+
+    submitted_messages: [Message!]! @relation(name: "MessageSubmitter")
+    requested_messages: [Message!]! @relation(name: "MessageRequester")
+    cc_messages: [Message!]! @relation(name: "MessageCcs")
+    comments: [Comment!]! @relation(name: "Commenter")
+    mentioned_comments: [Comment!]! @relation(name: "MentionnedPersons")
+    activities: [Activity!]! @relation(name: "PersonActivities")
+    links_created: [PublicLink!]! @relation(name: "PersonPublicLinksCreated")
+
+    account: Account @relation(name: "AccountPerson")
+
+    deleted: Boolean! @default(value: "false")
+    type: PERSON_TYPE! @default(value: "CUSTOMER")
+    name: String!
+    email: String
+    details: String
+    phone: String
+    zendesk_url: String
+}
+
+type IntegrationLinks {
+    intercom: String
+    zendesk: String
+
+    organization: Organization! @relation(name: "OrganizationLinks")
+}
+
+type Organization {
+    id: ID! @unique
+    clientId: ID @unique
+    mongoId: ID
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    _projectId: ID
+
+    project: Project! @relation(name: "ProjectOrganizations")
+    persons: [Person!]! @relation(name: "OrganizationPersons")
+
+    links: IntegrationLinks
+        @relation(name: "OrganizationLinks", onDelete: CASCADE)
+
+    attributes: Json
+    name: String!
+    details: String
+}
+
+type Changeset {
+    # mentions: [Person!]! @relation(name: "ActivityChangeset", onDelete: CASCADE)
+    activity: Activity! @relation(name: "ActivityChangeset")
+
+    value: Json!
+    old_value: Json
+    element_type: String
+}
+
+type Activity {
+    id: ID! @unique
+    clientId: ID @unique
+    mongoId: ID
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    _projectId: ID
+
+    project: Project! @relation(name: "ProjectActivities")
+    person: Person @relation(name: "PersonActivities")
+    changeset: Changeset!
+        @relation(name: "ActivityChangeset", onDelete: CASCADE)
+    linked_notifications: [Notification!]!
+        @relation(name: "NotificationActivity", onDelete: CASCADE)
+    discovery: Discovery @relation(name: "DiscoveryActivities")
+
+    action: ACTIVITY_ACTION!
+    trackable_type: ACTIVITY_SOURCE!
+}
+
+enum ACTIVITY_SOURCE {
+    DISCOVERY
+    COMPONENT
+}
+
+enum ACTIVITY_ACTION {
+    MOVED
+    DELETED
+    FEEDBACK_LINKED
+    CREATED
+    COMMENTED
+    STATE_CHANGED
+}
+
+enum GROUP_BY {
+    NONE
+    COLUMNS
+}
+
+enum ROW_HEIGHT {
+    SMALL
+    MEDIUM
+}
+
+type Filterview {
+    id: ID! @unique
+    clientId: ID @unique
+    mongoId: ID @unique
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    _projectId: ID
+
+    project: Project! @relation(name: "ProjectFilterviews")
+    tags: [Tag!]!
+    user_groups: [Usergroup!]!
+    discoverystates: [Discoverystate!]!
+    columns: [ScoreColumn!]!
+
+    position: Int!
+    name: String!
+    search_query: String
+    sort_id: String!
+    group_by: GROUP_BY @default(value: "NONE")
+    # row_height: ROW_HEIGHT! @default(value: "MEDIUM")
+    sort_order_inverted: Boolean! @default(value: "false")
+}
+
+type Tag {
+    id: ID! @unique
+    clientId: ID @unique
+    mongoId: ID @unique
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    _projectId: ID
+
+    project: Project! @relation(name: "ProjectTags")
+    tagged_discoveries: [Discovery!]! @relation(name: "TaggedDiscoveries")
+
+    name: String!
+    color: COLOR!
+}
+
+type Usergroup {
+    id: ID! @unique
+    clientId: ID @unique
+    mongoId: ID @unique
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    _projectId: ID
+
+    project: Project! @relation(name: "ProjectUsergroups")
+    tagged_persons: [Person!]! @relation(name: "UsergroupPersons")
+
+    name: String!
+}
+
+type Invite {
+    id: ID! @unique
+    clientId: ID @unique
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    _projectId: ID
+
+    project: Project! @relation(name: "ProjectInvites")
+
+    right: RIGHT!
+    email: String!
+}
+
+type Picture {
+    name: String!
+    url: String!
+
+    project: Project @relation(name: "ProjectPicture")
+    person: Person @relation(name: "PersonAvatar")
+}
+
+type Attachment {
+    id: ID! @unique
+    clientId: ID @unique
+    createdAt: DateTime!
+    updatedAt: DateTime!
+
+    url: String!
+    thumbnailUrl: String
+    content: String
+    cid: String
+    filename: String
+    type: String
+    size: Int
+
+    attached_submessages: [Submessage!]!
+        @relation(name: "SubmessageAttachments")
+    attached_messages: [Message!]! @relation(name: "MessageAttachments")
+    attached_discoveries: [Discovery!]! @relation(name: "DiscoveryAttachments")
+    attached_comments: [Comment!]! @relation(name: "CommentAttachments")
+}
+
+type Context {
+    integration_panel_open: Boolean! @default(value: "true")
+    last_used_view_id: ID
+
+    account: Account! @relation(name: "AccountContext")
+}
+
+type Notification {
+    id: ID! @unique
+    clientId: ID @unique
+    createdAt: DateTime!
+    updatedAt: DateTime!
+
+    activity: Activity!
+        @relation(name: "NotificationActivity", onDelete: SET_NULL)
+    account: Account! @relation(name: "AccountNotifications")
+
+    read: Boolean! @default(value: "false")
+}
