@@ -26,15 +26,16 @@ Coding style guide: https://github.com/airbnb/javascript
 * Mysql
 
 ## Integrations
-* Serverless
+* Serverless (Lambda)
 * Typescript
 * Webpack
 * Heroku
 
 ## Devops
+* Cloudflare
 * Bitbucket (Git)
 * Docker
-* AWS
+* AWS (EC2, Elasticbeanstalk, Lambda, SES, ECS)
 * Shell scripting
 * Localtunnel (similar Ngrok)
 * Payment: Chargebee + Stripe
